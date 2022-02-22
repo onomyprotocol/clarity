@@ -62,12 +62,7 @@ impl Signature {
         } else if self.v == u256!(27) || self.v == u256!(28) {
             None
         } else {
-            Some(
-                self.v
-                    .wrapping_sub(u256!(1))
-                    .shr1()
-                    .wrapping_sub(u256!(17)),
-            )
+            Some(self.v.wrapping_sub(u256!(1)).shr1().wrapping_sub(u256!(17)))
         }
     }
 

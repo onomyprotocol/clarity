@@ -2,7 +2,7 @@
 extern crate criterion;
 extern crate clarity;
 
-use clarity::{PrivateKey, Transaction};
+use clarity::{u256, PrivateKey, Transaction};
 use criterion::Criterion;
 
 fn tx_sign_bench(c: &mut Criterion) {
