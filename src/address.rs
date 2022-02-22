@@ -2,7 +2,8 @@ use crate::utils::bytes_to_hex_str;
 use crate::utils::display_uint256_as_address;
 use crate::utils::hex_str_to_bytes;
 use crate::Error;
-use num256::Uint256;
+use crate::Uint256;
+
 use serde::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
@@ -23,6 +24,10 @@ use std::{
 pub struct Address([u8; 20]);
 
 impl Address {
+    pub const fn from_u8_array(x: [u8; 20]) -> Self {
+        Self(x)
+    }
+
     /// Get raw bytes of the address.
     pub fn as_bytes(&self) -> &[u8] {
         &self.0

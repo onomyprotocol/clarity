@@ -2,12 +2,13 @@ use crate::address::Address;
 use crate::constants::SECPK1N;
 use crate::context::SECP256K1;
 use crate::error::Error;
+use crate::u256;
 use crate::utils::{
     big_endian_uint256_deserialize, big_endian_uint256_serialize, bytes_to_hex_str,
     hex_str_to_bytes,
 };
-use num256::Uint256;
-use num_traits::{ToPrimitive, Zero};
+use crate::Uint256;
+
 use secp256k1::ecdsa::{RecoverableSignature, RecoveryId};
 use secp256k1::Message;
 use sha3::{Digest, Keccak256};
@@ -34,15 +35,15 @@ pub struct Signature {
 }
 
 impl Signature {
-    pub fn new(v: Uint256, r: Uint256, s: Uint256) -> Signature {
+    pub const fn new(v: Uint256, r: Uint256, s: Uint256) -> Signature {
         Signature { v, r, s }
     }
 
     /// Like is_valid() but returns a reason
     pub fn error_check(&self) -> Result<(), Error> {
-        if self.r >= *SECPK1N || self.r == Uint256::zero() {
+        if self.r >= SECPK1N || self.r.is_zero() {
             return Err(Error::InvalidR);
-        } else if self.s >= *SECPK1N || self.s == Uint256::zero() {
+        } else if self.s >= SECPK1N || self.s.is_zero() {
             return Err(Error::InvalidS);
         } else if let Err(e) = self.get_v() {
             return Err(e);
@@ -56,24 +57,30 @@ impl Signature {
     }
 
     pub fn network_id(&self) -> Option<Uint256> {
-        if self.r == Uint256::zero() && self.s == Uint256::zero() {
+        if self.r.is_zero() && self.s.is_zero() {
             Some(self.v.clone())
-        } else if self.v == 27u32.into() || self.v == 28u32.into() {
+        } else if self.v == u256!(27) || self.v == u256!(28) {
             None
         } else {
-            Some(((self.v.clone() - 1u32.into()) / 2u32.into()) - 17u32.into())
+            Some(
+                self.v
+                    .clone()
+                    .wrapping_sub(u256!(1))
+                    .shr1()
+                    .wrapping_sub(u256!(17)),
+            )
         }
     }
 
     pub fn check_low_s_metropolis(&self) -> Result<(), Error> {
-        if self.s > (SECPK1N.clone() / Uint256::from(2u32)) {
+        if self.s > SECPK1N.clone().shr1() {
             return Err(Error::InvalidS);
         }
         Ok(())
     }
 
     pub fn check_low_s_homestead(&self) -> Result<(), Error> {
-        if self.s > (SECPK1N.clone() / Uint256::from(2u32)) || self.s == Uint256::zero() {
+        if self.s > SECPK1N.clone().shr1() || self.s.is_zero() {
             return Err(Error::InvalidS);
         }
         Ok(())
@@ -90,27 +97,21 @@ impl Signature {
         // Since 0.1.20 it calls `as_bytes` and consumes self
         self.to_bytes()
     }
+
     /// Extracts signature as bytes.
     ///
     /// This supersedes `into_bytes` as it does not consume the object itself.
     pub fn to_bytes(&self) -> [u8; 65] {
-        // This is new since 0.1.20 in a way that this just borrows self,
-        // and won't consume the object itself.
-        // Usually `to_bytes` function in standard library returns a borrowed
-        // value, but its impossible in our case since VRS are separate objects,
-        // and its impossible to just cast a struct into a slice of bytes.
-        let r: [u8; 32] = self.r.clone().into();
-        let s: [u8; 32] = self.s.clone().into();
         let mut result = [0x00u8; 65];
         // Put r at the beginning
-        result[0..32].copy_from_slice(&r);
+        result[0..32].copy_from_slice(&self.r.to_u8_array_be());
         // Add s in the middle
-        result[32..64].copy_from_slice(&s);
+        result[32..64].copy_from_slice(&self.s.to_u8_array_be());
         // End up with v at the end
-        let v = self.v.to_bytes_be();
-        result[64] = v[v.len() - 1];
+        result[64] = self.v.resize_to_u8();
         result
     }
+
     /// Constructs a signature from a bytes string
     ///
     /// This is opposite to `into_bytes()` where a signature is created based
@@ -120,44 +121,47 @@ impl Signature {
             return Err(Error::InvalidSignatureLength);
         }
 
-        let r: Uint256 = {
-            let mut data: [u8; 32] = Default::default();
-            data.copy_from_slice(&bytes[0..32]);
-            data.into()
-        };
-        let s: Uint256 = {
-            let mut data: [u8; 32] = Default::default();
-            data.copy_from_slice(&bytes[32..64]);
-            data.into()
-        };
+        let r = Uint256::from_bytes_be(&bytes[0..32]).unwrap();
+        let s = Uint256::from_bytes_be(&bytes[32..64]).unwrap();
         let v = bytes[64];
-        Ok(Signature::new(v.into(), r, s))
+        Ok(Signature::new(Uint256::from_u8(v), r, s))
     }
 
     /// Extract V parameter with regards to network ID. Use this rather than V directly
     pub fn get_v(&self) -> Result<Uint256, Error> {
-        if self.v == 27u32.into() || self.v == 28u32.into() {
+        if self.v == u256!(27) || self.v == u256!(28) {
             // Valid V values are in {27, 28} according to Ethereum Yellow paper Appendix F (282).
             Ok(self.v.clone())
-        } else if self.v >= 37u32.into() {
+        } else if self.v >= u256!(37) {
             let network_id = self.network_id().ok_or(Error::InvalidNetworkId)?;
             // // Otherwise we have to extract "v"...
-            let vee = self.v.clone() - (network_id * 2u32.into()) - 8u32.into();
+            let vee = self
+                .v
+                .clone()
+                .wrapping_sub(network_id.shl1())
+                .wrapping_sub(u256!(8));
             // // ... so after all v will still match 27<=v<=28
-            assert!(vee == 27u32.into() || vee == 28u32.into());
+            assert!(vee == u256!(27) || vee == u256!(28));
             Ok(vee)
         } else {
             // All other V values would be errorneous for our calculations
             Err(Error::InvalidV)
         }
     }
+
     /// Recover an address from a signature
     ///
     /// This can be called with any arbitrary signature, and a hashed message.
     pub fn recover(&self, hash: &[u8]) -> Result<Address, Error> {
         // Create recovery ID which is "v" minus 27. Without this it wouldn't be possible to extract recoverable signature.
-        let v = RecoveryId::from_i32(self.get_v()?.to_i32().ok_or(Error::InvalidV)? - 27)
-            .map_err(Error::DecodeRecoveryId)?;
+
+        // check that it can fit under i32::MAX
+        let v = self.get_v()?;
+        if v.sig_bits() >= 32 {
+            return Err(Error::InvalidV);
+        }
+        let v = v.resize_to_u32() as i32;
+        let v = RecoveryId::from_i32(v.wrapping_sub(27)).map_err(Error::DecodeRecoveryId)?;
         // A message to recover which is a hash of the transaction
         let msg = Message::from_slice(hash).map_err(Error::ParseMessage)?;
 
@@ -189,9 +193,9 @@ impl Signature {
 impl Default for Signature {
     fn default() -> Signature {
         Signature {
-            r: Uint256::zero(),
-            v: Uint256::zero(),
-            s: Uint256::zero(),
+            r: u256!(0),
+            v: u256!(0),
+            s: u256!(0),
         }
     }
 }
@@ -254,17 +258,20 @@ impl fmt::UpperHex for Signature {
     }
 }
 
+#[cfg(test)]
+const SIG123: Signature = Signature::new(u256!(1), u256!(2), u256!(3));
+
 #[test]
 fn new_signature() {
-    let sig = Signature::new(1u32.into(), 2u32.into(), 3u32.into());
-    assert_eq!(sig.v, 1u32.into());
-    assert_eq!(sig.r, 2u32.into());
-    assert_eq!(sig.s, 3u32.into());
+    let sig = SIG123;
+    assert_eq!(sig.v, u256!(1));
+    assert_eq!(sig.r, u256!(2));
+    assert_eq!(sig.s, u256!(3));
 }
 
 #[test]
 fn to_string() {
-    let sig = Signature::new(1u32.into(), 2u32.into(), 3u32.into());
+    let sig = SIG123;
     let sig_string = sig.to_string();
     assert_eq!(
         sig_string,
@@ -286,7 +293,7 @@ fn to_string() {
 
 #[test]
 fn to_upper_hex() {
-    let sig = Signature::new(1u32.into(), 65450u32.into(), 32456u32.into());
+    let sig = Signature::new(u256!(1), u256!(65450), u256!(32456));
     let sig_string = format!("{:#X}", sig);
     assert_eq!(
         sig_string,
@@ -309,7 +316,7 @@ fn to_upper_hex() {
 }
 #[test]
 fn to_lower_hex() {
-    let sig = Signature::new(1u32.into(), 65450u32.into(), 32456u32.into());
+    let sig = Signature::new(u256!(1), u256!(65450), u256!(32456));
     let sig_string = format!("{:#x}", sig);
     assert_eq!(
         sig_string,
@@ -333,7 +340,7 @@ fn to_lower_hex() {
 
 #[test]
 fn into_bytes() {
-    let sig = Signature::new(1u32.into(), 2u32.into(), 3u32.into());
+    let sig = SIG123;
 
     let sig_bytes = sig.to_bytes();
     assert_eq!(
@@ -351,7 +358,8 @@ fn into_bytes() {
 
 #[test]
 fn to_string_with_zero_v() {
-    let sig = Signature::new(0u32.into(), 2u32.into(), 3u32.into());
+    let mut sig = SIG123;
+    sig.v = u256!(0);
     let sig_str = sig.to_string();
     assert_eq!(
         sig_str,
@@ -406,7 +414,7 @@ fn parse_hex_signature() {
             .unwrap();
     let correct_v = vec![28u8];
 
-    assert_eq!(sig.r, Uint256::from_bytes_be(&correct_r));
-    assert_eq!(sig.s, Uint256::from_bytes_be(&correct_s));
-    assert_eq!(sig.v, Uint256::from_bytes_be(&correct_v));
+    assert_eq!(sig.r, Uint256::from_bytes_be(&correct_r).unwrap());
+    assert_eq!(sig.s, Uint256::from_bytes_be(&correct_s).unwrap());
+    assert_eq!(sig.v, Uint256::from_bytes_be(&correct_v).unwrap());
 }

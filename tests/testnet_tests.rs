@@ -1,14 +1,16 @@
+#![cfg(feature = "FIXME")]
+
 extern crate clarity;
 extern crate rand;
 extern crate web3;
 use clarity::utils::bytes_to_hex_str;
-use clarity::{PrivateKey, Transaction};
+use clarity::{PrivateKey, Transaction, Uint256};
 use rand::RngCore;
 use std::env;
 use std::{thread, time};
 use web3::api::Web3;
 use web3::futures::Future;
-use web3::types::{Bytes, TransactionRequest, U256};
+use web3::types::{Bytes, TransactionRequest};
 
 /// Creates a random key by reading random data from the available OS facility
 fn make_random_key() -> PrivateKey {
@@ -26,7 +28,7 @@ fn make_web3() -> Option<(
     web3::transports::EventLoopHandle,
     Web3<web3::transports::Http>,
 )> {
-    let address = env::var("GANACHE_HOST").unwrap_or_else(|_| "http://localhost:8545".to_string());
+    let address = env::var("GANACHE_HOST").unwrap_or("http://localhost:8545".to_string());
     eprintln!("Trying to create a Web3 connection to {:?}", address);
     for counter in 0..30 {
         match web3::transports::Http::new(&address) {
@@ -99,7 +101,7 @@ fn testnet_alice_and_bob() {
         .wait()
         .expect("Unable to retrieve accounts");
 
-    let one_eth: U256 = "de0b6b3a7640000".parse().unwrap();
+    let one_eth = u256!(de0b6b3a7640000);
 
     let seed = &accounts[0];
     println!("Sending 10 ETH to Alice from {:?}", seed);
@@ -108,7 +110,7 @@ fn testnet_alice_and_bob() {
         from: *seed,
         to: Some(alice_priv_key.to_address().as_bytes().into()),
         gas: None,
-        gas_price: Some(0x1.into()),
+        gas_price: Some(u256!(1)),
         value: Some(one_eth * 10u64),
         data: None,
         nonce: None,
@@ -129,11 +131,11 @@ fn testnet_alice_and_bob() {
     // Send 5 transactions using Clarity from Alice to Bob
     for nonce in 0u64..5u64 {
         let tx = Transaction {
-            nonce: nonce.into(),
-            gas_price: 1_000_000_000u64.into(),
-            gas_limit: 21000u64.into(),
+            nonce: Uint256::from_u64(nonce),
+            gas_price: u256!(1_000_000_000),
+            gas_limit: u256!(21000),
             to: bob_priv_key.to_address(),
-            value: 1_000_000_000_000_000_000u64.into(), // 0.1ETH
+            value: u256!(1_000_000_000_000_000_000), // 0.1ETH
             data: Vec::new(),
             signature: None,
         };

@@ -1,16 +1,14 @@
 extern crate clarity;
-extern crate num256;
-extern crate num_traits;
 extern crate rustc_test as test;
 extern crate serde_bytes;
 extern crate serde_json;
 extern crate serde_rlp;
 #[macro_use]
 extern crate serde_derive;
+use clarity::u256;
 use clarity::utils::{bytes_to_hex_str, hex_str_to_bytes};
+use clarity::Uint256;
 use clarity::{Signature, Transaction};
-use num256::Uint256;
-use num_traits::Zero;
 use serde_json::Value;
 use serde_rlp::ser::to_bytes;
 use std::collections::HashSet;
@@ -169,22 +167,17 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
     let raw_params = filler.transaction.as_ref().unwrap();
     // Create a tx based on filler params
     let tx = Transaction {
-        nonce: raw_params.nonce.parse().unwrap_or_else(|_| Uint256::zero()),
-        gas_price: raw_params
-            .gas_price
-            .parse()
-            .unwrap_or_else(|_| Uint256::zero()),
-        gas_limit: raw_params
-            .gas_limit
-            .parse()
+        nonce: Uint256::from_dec_or_hex_str(&raw_params.nonce).unwrap_or(Uint256::zero()),
+        gas_price: Uint256::from_dec_or_hex_str(&raw_params.gas_price).unwrap_or(Uint256::zero()),
+        gas_limit: Uint256::from_dec_or_hex_str(&raw_params.gas_limit)
             .expect("Unable to parse gas_limit"),
         to: raw_params.to.parse().expect("Unable to parse address"),
-        value: raw_params.value.parse().unwrap_or_else(|_| Uint256::zero()),
+        value: Uint256::from_dec_or_hex_str(&raw_params.value).unwrap_or(Uint256::zero()),
         data: hex_str_to_bytes(&raw_params.data).expect("Unable to parse data"),
         signature: Some(Signature::new(
-            raw_params.v.parse().expect("Unable to parse v"),
-            raw_params.r.parse().expect("Unable to parse r"),
-            raw_params.s.parse().expect("Unable to parse s"),
+            Uint256::from_dec_or_hex_str(&raw_params.v).expect("Unable to parse v"),
+            Uint256::from_dec_or_hex_str(&raw_params.r).expect("Unable to parse r"),
+            Uint256::from_dec_or_hex_str(&raw_params.s).expect("Unable to parse s"),
         )),
     };
 
@@ -220,7 +213,7 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
     let expect = expect.expect("Expect should be available at this point");
 
     // TODO: Change v to u64 so it would validate overflow when decoding/creating (v <= 2**64-1 so it can't overflow)
-    assert!(tx.signature.as_ref().unwrap().v <= "18446744073709551615".parse().unwrap());
+    assert!(tx.signature.as_ref().unwrap().v <= u256!(18446744073709551615));
 
     // Since Homestead we have to verify if 0<s<secpk1n/2
     if is_subset(vec!["Homestead", "EIP150"], &expect.network) {
@@ -261,10 +254,10 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
         &expect.network,
     ) {
         // Since Spurious Dragon
-        assert!(network_id.is_some() || network_id.unwrap() == 1u32.into());
+        assert!(network_id.is_some() || network_id.unwrap() == u256!(1));
     } else {
         // Before Spurious Dragon
-        assert!(network_id.is_none() || network_id.unwrap() == 1u32.into());
+        assert!(network_id.is_none() || network_id.unwrap() == u256!(1));
     }
 }
 

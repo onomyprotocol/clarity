@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate criterion;
 extern crate clarity;
-extern crate num256;
 
 use clarity::{PrivateKey, Transaction};
 use criterion::Criterion;
@@ -11,11 +10,11 @@ fn tx_sign_bench(c: &mut Criterion) {
         .parse()
         .unwrap();
     let tx = Transaction {
-        nonce: 0u32.into(),
-        gas_price: "1000000000000".parse().unwrap(),
-        gas_limit: "10000".parse().unwrap(),
+        nonce: u256!(0),
+        gas_price: u256!(1000000000000),
+        gas_limit: u256!(10000),
         to: "13978aee95f38490e9769c39b2773ed763d9cd5f".parse().unwrap(),
-        value: "10000000000000000".parse().unwrap(),
+        value: u256!(10000000000000000),
         data: Vec::new(),
         signature: None,
     };

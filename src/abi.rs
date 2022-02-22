@@ -19,7 +19,8 @@
 
 use crate::address::Address;
 use crate::error::Error;
-use num256::Uint256;
+use crate::Uint256;
+
 use sha3::{Digest, Keccak256};
 
 /// A token represents a value of parameter of the contract call.
@@ -81,13 +82,7 @@ impl Token {
     /// Serializes a token into a [SerializedToken]()
     pub fn serialize(&self) -> SerializedToken {
         match *self {
-            Token::Uint(ref value) => {
-                assert!(value.bits() <= 256);
-                let bytes = value.to_bytes_be();
-                let mut res: [u8; 32] = Default::default();
-                res[32 - bytes.len()..].copy_from_slice(&bytes);
-                SerializedToken::Static(res)
-            }
+            Token::Uint(ref value) => SerializedToken::Static(value.to_u8_array_be()),
             Token::Bool(value) => {
                 let mut res: [u8; 32] = Default::default();
                 res[31] = value as u8;
@@ -156,31 +151,31 @@ impl Token {
 
 impl From<u8> for Token {
     fn from(v: u8) -> Token {
-        Token::Uint(Uint256::from(v))
+        Token::Uint(Uint256::from_u8(v))
     }
 }
 
 impl From<u16> for Token {
     fn from(v: u16) -> Token {
-        Token::Uint(Uint256::from(v))
+        Token::Uint(Uint256::from_u16(v))
     }
 }
 
 impl From<u32> for Token {
     fn from(v: u32) -> Token {
-        Token::Uint(Uint256::from(v))
+        Token::Uint(Uint256::from_u32(v))
     }
 }
 
 impl From<u64> for Token {
     fn from(v: u64) -> Token {
-        Token::Uint(Uint256::from(v))
+        Token::Uint(Uint256::from_u64(v))
     }
 }
 
 impl From<u128> for Token {
     fn from(v: u128) -> Token {
-        Token::Uint(Uint256::from(v))
+        Token::Uint(Uint256::from_u128(v))
     }
 }
 
@@ -717,7 +712,7 @@ mod tests {
     fn encode_peggy_checkpoint_hash() {
         use crate::utils::bytes_to_hex_str;
         // the valset nonce
-        let nonce: Uint256 = 0u32.into();
+        let nonce = crate::u256!(0);
         // the list of validator ethereum addresses represented by this
         let validators: Token = vec![
             "0xc783df8a850f42e7F7e57013759C285caa701eB6"

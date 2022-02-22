@@ -1,6 +1,7 @@
 use crate::private_key::ETHEREUM_SALT;
 use crate::Error;
-use num256::Uint256;
+use crate::Uint256;
+
 use serde::{
     de::{Deserialize, Deserializer},
     ser::Serializer,
@@ -85,11 +86,11 @@ pub fn big_endian_uint256_serialize<S>(x: &Uint256, s: S) -> Result<S::Ok, S::Er
 where
     S: Serializer,
 {
-    if x == &0u32.into() {
+    if x.is_zero() {
         s.serialize_bytes(&[])
     } else {
-        let bytes = x.to_bytes_be();
-        s.serialize_bytes(&bytes)
+        // this also drops leading zero bytes
+        s.serialize_bytes(&x.to_u8_array_be()[(x.lz() / 8)..])
     }
 }
 
@@ -97,7 +98,7 @@ pub fn big_endian_uint256_deserialize<'de, D>(d: D) -> Result<Uint256, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Ok(Uint256::from_bytes_be(&Vec::<u8>::deserialize(d)?))
+    Ok(Uint256::from_bytes_be(&Vec::<u8>::deserialize(d)?).unwrap())
 }
 
 #[test]

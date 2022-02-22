@@ -4,7 +4,7 @@ use crate::error::Error;
 use crate::raw_private_key::RawPrivateKey;
 use crate::signature::Signature;
 use crate::utils::{bytes_to_hex_str, hex_str_to_bytes};
-use num256::Uint256;
+use crate::Uint256;
 use secp256k1::{Message, SecretKey};
 use serde::Deserialize;
 use serde::Deserializer;
@@ -160,9 +160,9 @@ impl PrivateKey {
         let recovery_id = recovery_id.to_i32();
         assert!(recovery_id >= 0);
         let recovery_id = recovery_id as u32;
-        let v: Uint256 = (recovery_id + 27).into();
-        let r = Uint256::from_bytes_be(&compact[0..32]);
-        let s = Uint256::from_bytes_be(&compact[32..64]);
+        let v = Uint256::from_u32(recovery_id + 27);
+        let r = Uint256::from_bytes_be(&compact[0..32]).unwrap();
+        let s = Uint256::from_bytes_be(&compact[32..64]).unwrap();
         // This will swap the signature of a transaction, and returns a new signed TX.
         Signature::new(v, r, s)
     }
@@ -370,6 +370,8 @@ fn to_lower_hex() {
 
 #[test]
 fn sign_message() {
+    use crate::u256;
+
     // https://github.com/ethereum/tests/blob/b44cea1cccf1e4b63a05d1ca9f70f2063f28da6d/BasicTests/txtest.json
     let key: PrivateKey = "c87f65ff3f271bf5dc8643484f66b200109caffe4bf98c4cb393dc35740b28c0"
         .parse()
@@ -387,18 +389,14 @@ fn sign_message() {
 
     // geth account import <(echo c87f65ff3f271bf5dc8643484f66b200109caffe4bf98c4cb393dc35740b28c0)
     let sig = key.sign_hash(&hash);
-    assert_eq!(sig.v, 27u32.into());
+    assert_eq!(sig.v, u256!(27));
     assert_eq!(
         sig.r,
-        "60846573560682549108588594828362990367411621835316234394067988873897934296519"
-            .parse()
-            .unwrap()
+        u256!(60846573560682549108588594828362990367411621835316234394067988873897934296519)
     );
     assert_eq!(
         sig.s,
-        "38796436849307511461301231459196686786518980571289303247679628937607287361713"
-            .parse()
-            .unwrap()
+        u256!(38796436849307511461301231459196686786518980571289303247679628937607287361713)
     );
 
     let sig_2 = key.sign_insecure_msg(b"Hello, world!");

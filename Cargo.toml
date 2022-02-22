@@ -16,16 +16,14 @@ edition = "2021"
 travis-ci = { repository = "althea-net/clarity", branch = "master" }
 
 [dependencies]
-lazy_static = "1.4"
-num-bigint = { version = "0.4", default-features = false, features = ["serde"] }
-num-traits = "0.2"
-num256 = "0.3"
 secp256k1 = { version = "0.21", features = ["recovery"] }
 serde = "1.0"
 serde-rlp = "0.1"
 serde_bytes = "0.11"
 serde_derive = "1.0"
 sha3 = "0.10"
+u64_array_bigints = { path = "../u64_array_bigints/u64_array_bigints", default-features = false }
+#u64_array_bigints = { git = "https://github.com/AaronKutch/u64_array_bigints.git", rev = "9cb975474e45e4693af713b39e4575294b403c34", default-features = false }
 
 [[test]]
 name = "transaction_tests"
