@@ -15,7 +15,7 @@ use sha3::{Digest, Keccak256};
 use std::fmt::{self, Display};
 use std::str::FromStr;
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize, Hash)]
 pub struct Signature {
     #[serde(
         serialize_with = "big_endian_uint256_serialize",
@@ -58,13 +58,12 @@ impl Signature {
 
     pub fn network_id(&self) -> Option<Uint256> {
         if self.r.is_zero() && self.s.is_zero() {
-            Some(self.v.clone())
+            Some(self.v)
         } else if self.v == u256!(27) || self.v == u256!(28) {
             None
         } else {
             Some(
                 self.v
-                    .clone()
                     .wrapping_sub(u256!(1))
                     .shr1()
                     .wrapping_sub(u256!(17)),
@@ -73,14 +72,14 @@ impl Signature {
     }
 
     pub fn check_low_s_metropolis(&self) -> Result<(), Error> {
-        if self.s > SECPK1N.clone().shr1() {
+        if self.s > SECPK1N.shr1() {
             return Err(Error::InvalidS);
         }
         Ok(())
     }
 
     pub fn check_low_s_homestead(&self) -> Result<(), Error> {
-        if self.s > SECPK1N.clone().shr1() || self.s.is_zero() {
+        if self.s > SECPK1N.shr1() || self.s.is_zero() {
             return Err(Error::InvalidS);
         }
         Ok(())
@@ -131,13 +130,12 @@ impl Signature {
     pub fn get_v(&self) -> Result<Uint256, Error> {
         if self.v == u256!(27) || self.v == u256!(28) {
             // Valid V values are in {27, 28} according to Ethereum Yellow paper Appendix F (282).
-            Ok(self.v.clone())
+            Ok(self.v)
         } else if self.v >= u256!(37) {
             let network_id = self.network_id().ok_or(Error::InvalidNetworkId)?;
             // // Otherwise we have to extract "v"...
             let vee = self
                 .v
-                .clone()
                 .wrapping_sub(network_id.shl1())
                 .wrapping_sub(u256!(8));
             // // ... so after all v will still match 27<=v<=28

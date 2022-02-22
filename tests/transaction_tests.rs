@@ -167,12 +167,12 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
     let raw_params = filler.transaction.as_ref().unwrap();
     // Create a tx based on filler params
     let tx = Transaction {
-        nonce: Uint256::from_dec_or_hex_str(&raw_params.nonce).unwrap_or(Uint256::zero()),
-        gas_price: Uint256::from_dec_or_hex_str(&raw_params.gas_price).unwrap_or(Uint256::zero()),
+        nonce: Uint256::from_dec_or_hex_str(&raw_params.nonce).unwrap_or_else(|_| u256!(0)),
+        gas_price: Uint256::from_dec_or_hex_str(&raw_params.gas_price).unwrap_or_else(|_| u256!(0)),
         gas_limit: Uint256::from_dec_or_hex_str(&raw_params.gas_limit)
             .expect("Unable to parse gas_limit"),
         to: raw_params.to.parse().expect("Unable to parse address"),
-        value: Uint256::from_dec_or_hex_str(&raw_params.value).unwrap_or(Uint256::zero()),
+        value: Uint256::from_dec_or_hex_str(&raw_params.value).unwrap_or_else(|_| u256!(0)),
         data: hex_str_to_bytes(&raw_params.data).expect("Unable to parse data"),
         signature: Some(Signature::new(
             Uint256::from_dec_or_hex_str(&raw_params.v).expect("Unable to parse v"),
@@ -262,6 +262,7 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
 }
 
 /// Takes a path to JSON file and returns a test
+#[allow(clippy::to_string_in_format_args)]
 fn make_test(path: &Path) -> Vec<test::TestDescAndFn> {
     // For now all the test and filler data is parsed upfront,
     // to only create tests that contains data that we're able to parse.

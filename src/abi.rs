@@ -259,7 +259,7 @@ impl From<Uint256> for Token {
 
 impl From<&Uint256> for Token {
     fn from(v: &Uint256) -> Token {
-        Token::Uint(v.clone())
+        Token::Uint(*v)
     }
 }
 

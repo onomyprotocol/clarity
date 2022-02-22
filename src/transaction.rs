@@ -85,16 +85,16 @@ impl Serialize for Transaction {
     {
         // Serialization of a transaction without signature serializes
         // the data assuming the "vrs" params are set to 0.
-        let sig = self.signature.clone().unwrap_or_default();
+        let sig = self.signature.unwrap_or_default();
         let data = (
-            &BigEndianInt(self.nonce.clone()),
-            &BigEndianInt(self.gas_price.clone()),
-            &BigEndianInt(self.gas_limit.clone()),
+            &BigEndianInt(self.nonce),
+            &BigEndianInt(self.gas_price),
+            &BigEndianInt(self.gas_limit),
             &AddressDef(&self.to),
-            &BigEndianInt(self.value.clone()),
+            &BigEndianInt(self.value),
             &ByteBuf::from(self.data.clone()),
-            &BigEndianInt(sig.v.clone()),
-            &BigEndianInt(sig.r.clone()),
+            &BigEndianInt(sig.v),
+            &BigEndianInt(sig.r),
             &BigEndianInt(sig.s),
         );
         data.serialize(serializer)
@@ -113,7 +113,7 @@ impl Transaction {
         // it is not possible for `Uint256` to go above 2**256 - 1
 
         // invalid signature check
-        if let Some(sig) = self.signature.clone() {
+        if let Some(sig) = self.signature {
             if !sig.is_valid() {
                 return false;
             }
@@ -146,27 +146,27 @@ impl Transaction {
     fn to_unsigned_tx_params(&self) -> Vec<u8> {
         // TODO: Could be refactored in a better way somehow
         let data = (
-            &BigEndianInt(self.nonce.clone()),
-            &BigEndianInt(self.gas_price.clone()),
-            &BigEndianInt(self.gas_limit.clone()),
+            &BigEndianInt(self.nonce),
+            &BigEndianInt(self.gas_price),
+            &BigEndianInt(self.gas_limit),
             &AddressDef(&self.to),
-            &BigEndianInt(self.value.clone()),
+            &BigEndianInt(self.value),
             &ByteBuf::from(self.data.clone()),
         );
         to_bytes(&data).unwrap()
     }
 
-    fn to_unsigned_tx_params_for_network(&self, network_id: &Uint256) -> Vec<u8> {
+    fn to_unsigned_tx_params_for_network(&self, network_id: Uint256) -> Vec<u8> {
         // assert!(self.signature.is_none());
         // TODO: Could be refactored in a better way somehow
         let data = (
-            &BigEndianInt(self.nonce.clone()),
-            &BigEndianInt(self.gas_price.clone()),
-            &BigEndianInt(self.gas_limit.clone()),
+            &BigEndianInt(self.nonce),
+            &BigEndianInt(self.gas_price),
+            &BigEndianInt(self.gas_limit),
             &AddressDef(&self.to),
-            &BigEndianInt(self.value.clone()),
+            &BigEndianInt(self.value),
             &ByteBuf::from(self.data.clone()),
-            &BigEndianInt(network_id.clone()),
+            &BigEndianInt(network_id),
             &ByteBuf::new(),
             &ByteBuf::new(),
         );
@@ -174,12 +174,13 @@ impl Transaction {
     }
 
     /// Creates a Transaction with new
+    #[must_use]
     pub fn sign(&self, key: &PrivateKey, network_id: Option<u64>) -> Transaction {
         // This is a special matcher to prepare raw RLP data with correct network_id.
         let rlpdata = match network_id {
             Some(network_id) => {
                 assert!((1..9_223_372_036_854_775_790u64).contains(&network_id)); // 1 <= id < 2**63 - 18
-                self.to_unsigned_tx_params_for_network(&Uint256::from_u64(network_id))
+                self.to_unsigned_tx_params_for_network(Uint256::from_u64(network_id))
             }
             None => self.to_unsigned_tx_params(),
         };
@@ -215,7 +216,7 @@ impl Transaction {
                 let network_id = sig.network_id().ok_or(Error::InvalidNetworkId)?;
                 // In this case hash of the transaction is usual RLP paremeters but "VRS" params
                 // are swapped for [network_id, '', '']. See Appendix F (285)
-                let rlp_data = self.to_unsigned_tx_params_for_network(&network_id);
+                let rlp_data = self.to_unsigned_tx_params_for_network(network_id);
                 Keccak256::digest(&rlp_data)
             } else {
                 // All other V values would be errorneous for our calculations

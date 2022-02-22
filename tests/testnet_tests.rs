@@ -28,7 +28,7 @@ fn make_web3() -> Option<(
     web3::transports::EventLoopHandle,
     Web3<web3::transports::Http>,
 )> {
-    let address = env::var("GANACHE_HOST").unwrap_or("http://localhost:8545".to_string());
+    let address = env::var("GANACHE_HOST").unwrap_or_else(|_| "http://localhost:8545".to_string());
     eprintln!("Trying to create a Web3 connection to {:?}", address);
     for counter in 0..30 {
         match web3::transports::Http::new(&address) {
@@ -89,11 +89,11 @@ fn testnet_alice_and_bob() {
         make_web3().expect("Unable to create a valid transport for Web3 protocol");
 
     let alice_priv_key = make_random_key();
-    println!("Alice private key: 0x{}", alice_priv_key.to_string());
+    println!("Alice private key: 0x{}", alice_priv_key);
     let bob_priv_key = make_random_key();
     assert_ne!(alice_priv_key, bob_priv_key);
 
-    println!("Bob private key: 0x{}", bob_priv_key.to_string());
+    println!("Bob private key: 0x{}", bob_priv_key);
 
     let accounts = web3
         .eth()

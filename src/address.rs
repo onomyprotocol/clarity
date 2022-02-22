@@ -120,17 +120,11 @@ impl Into<[u8; 32]> for Address {
 impl fmt::LowerHex for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
-            let res = write!(f, "0x");
-            if res.is_err() {
-                return res;
-            }
+            write!(f, "0x")?
         }
 
         for hex_char in self.0.iter() {
-            let res = write!(f, "{:x}", hex_char);
-            if res.is_err() {
-                return res;
-            }
+            write!(f, "{:x}", hex_char)?;
         }
         Ok(())
     }
@@ -139,17 +133,11 @@ impl fmt::LowerHex for Address {
 impl fmt::UpperHex for Address {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         if f.alternate() {
-            let res = write!(f, "0x");
-            if res.is_err() {
-                return res;
-            }
+            write!(f, "0x")?
         }
 
         for hex_char in self.0.iter() {
-            let res = write!(f, "{:X}", hex_char);
-            if res.is_err() {
-                return res;
-            }
+            write!(f, "{:X}", hex_char)?;
         }
         Ok(())
     }

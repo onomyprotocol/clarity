@@ -5,7 +5,7 @@ use crate::Uint256;
 ///
 /// This is done this way to overcome the "orphan rule" where you can't
 /// implement traits for a type that comes from different crate.
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Copy, Serialize, Deserialize)]
 pub struct BigEndianInt(
     #[serde(
         serialize_with = "big_endian_uint256_serialize",
