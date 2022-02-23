@@ -22,8 +22,7 @@ serde-rlp = "0.1"
 serde_bytes = "0.11"
 serde_derive = "1.0"
 sha3 = "0.10"
-#u64_array_bigints = { path = "../u64_array_bigints/u64_array_bigints" }
-u64_array_bigints = { git = "https://github.com/AaronKutch/u64_array_bigints.git", rev = "ed09e1da4720f10b094b16b0242373f2e5e5c7ac" }
+u64_array_bigints = { git = "https://github.com/AaronKutch/u64_array_bigints.git", rev = "9febbe7e31edefe94cd49890660f7823922d4da4" }
 
 [[test]]
 name = "transaction_tests"
