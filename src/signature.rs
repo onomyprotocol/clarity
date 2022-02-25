@@ -62,7 +62,12 @@ impl Signature {
         } else if self.v == u256!(27) || self.v == u256!(28) {
             None
         } else {
-            Some(self.v.wrapping_sub(u256!(1)).shr1().wrapping_sub(u256!(17)))
+            Some(
+                self.v
+                    .checked_sub(u256!(1))?
+                    .shr1()
+                    .checked_sub(u256!(17))?,
+            )
         }
     }
 
@@ -131,8 +136,10 @@ impl Signature {
             // // Otherwise we have to extract "v"...
             let vee = self
                 .v
-                .wrapping_sub(network_id.shl1())
-                .wrapping_sub(u256!(8));
+                .checked_sub(network_id.shl1().ok_or(Error::InvalidNetworkId)?)
+                .ok_or(Error::InvalidNetworkId)?
+                .checked_sub(u256!(8))
+                .ok_or(Error::InvalidNetworkId)?;
             // // ... so after all v will still match 27<=v<=28
             assert!(vee == u256!(27) || vee == u256!(28));
             Ok(vee)
@@ -154,7 +161,8 @@ impl Signature {
             return Err(Error::InvalidV);
         }
         let v = v.resize_to_u32() as i32;
-        let v = RecoveryId::from_i32(v.wrapping_sub(27)).map_err(Error::DecodeRecoveryId)?;
+        let v = RecoveryId::from_i32(v.checked_sub(27).ok_or(Error::InvalidNetworkId)?)
+            .map_err(Error::DecodeRecoveryId)?;
         // A message to recover which is a hash of the transaction
         let msg = Message::from_slice(hash).map_err(Error::ParseMessage)?;
 

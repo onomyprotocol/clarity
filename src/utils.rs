@@ -98,7 +98,8 @@ pub fn big_endian_uint256_deserialize<'de, D>(d: D) -> Result<Uint256, D::Error>
 where
     D: Deserializer<'de>,
 {
-    Ok(Uint256::from_bytes_be(&Vec::<u8>::deserialize(d)?).unwrap())
+    Uint256::from_bytes_be(&Vec::<u8>::deserialize(d)?)
+        .ok_or_else(|| crate::serde::de::Error::custom("`Uint256::from_bytes_be` failed"))
 }
 
 #[test]

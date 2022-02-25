@@ -191,8 +191,10 @@ impl Transaction {
             // Account v for the network_id value
             sig.v = sig
                 .v
-                .wrapping_add(u256!(8))
-                .wrapping_add(Uint256::from_u64(network_id).shl1());
+                .checked_add(u256!(8))
+                .unwrap()
+                .checked_add(Uint256::from_u64(network_id).shl1().unwrap())
+                .unwrap();
         }
         let mut tx = self.clone();
         tx.signature = Some(sig);
