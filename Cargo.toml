@@ -22,7 +22,7 @@ serde-rlp = "0.1"
 serde_bytes = "0.11"
 serde_derive = "1.0"
 sha3 = "0.10"
-u64_array_bigints = { version = "0.2", default-features = false, features = ["serde_support"] }
+u64_array_bigints = { version = "0.3", default-features = false }
 
 [[test]]
 name = "transaction_tests"

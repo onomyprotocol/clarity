@@ -167,17 +167,20 @@ fn test_fn(fixtures: &TestFixture, filler: &TestFiller, expect: Option<&TestFill
     let raw_params = filler.transaction.as_ref().unwrap();
     // Create a tx based on filler params
     let tx = Transaction {
-        nonce: Uint256::from_dec_or_hex_str(&raw_params.nonce).unwrap_or_else(|_| u256!(0)),
-        gas_price: Uint256::from_dec_or_hex_str(&raw_params.gas_price).unwrap_or_else(|_| u256!(0)),
-        gas_limit: Uint256::from_dec_or_hex_str(&raw_params.gas_limit)
+        nonce: Uint256::from_dec_or_hex_str_restricted(&raw_params.nonce)
+            .unwrap_or_else(|_| u256!(0)),
+        gas_price: Uint256::from_dec_or_hex_str_restricted(&raw_params.gas_price)
+            .unwrap_or_else(|_| u256!(0)),
+        gas_limit: Uint256::from_dec_or_hex_str_restricted(&raw_params.gas_limit)
             .expect("Unable to parse gas_limit"),
         to: raw_params.to.parse().expect("Unable to parse address"),
-        value: Uint256::from_dec_or_hex_str(&raw_params.value).unwrap_or_else(|_| u256!(0)),
+        value: Uint256::from_dec_or_hex_str_restricted(&raw_params.value)
+            .unwrap_or_else(|_| u256!(0)),
         data: hex_str_to_bytes(&raw_params.data).expect("Unable to parse data"),
         signature: Some(Signature::new(
-            Uint256::from_dec_or_hex_str(&raw_params.v).expect("Unable to parse v"),
-            Uint256::from_dec_or_hex_str(&raw_params.r).expect("Unable to parse r"),
-            Uint256::from_dec_or_hex_str(&raw_params.s).expect("Unable to parse s"),
+            Uint256::from_dec_or_hex_str_restricted(&raw_params.v).expect("Unable to parse v"),
+            Uint256::from_dec_or_hex_str_restricted(&raw_params.r).expect("Unable to parse r"),
+            Uint256::from_dec_or_hex_str_restricted(&raw_params.s).expect("Unable to parse s"),
         )),
     };
 
