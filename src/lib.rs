@@ -10,11 +10,7 @@
 //! ## Getting started
 //! Here's an example lifetime of an Alice-to-Bob Ethereum transaction made with Clarity:
 //! ```rust,no_run
-//! extern crate clarity;
-//! extern crate futures;
-//! extern crate web3;
-//!
-//! use clarity::{Address, Signature, Transaction, PrivateKey};
+//! use clarity::{Address, Signature, Transaction, PrivateKey, Uint256, u256};
 //!
 //! use futures::Future;
 //! use web3::{transports, types::Bytes, Web3};
@@ -29,11 +25,11 @@
 //!
 //! // Create a new transaction
 //! let tx = Transaction {
-//!     nonce: 0u32.into(),
-//!     gas_price: 1_000_000_000u32.into(),
-//!     gas_limit: 21_000u32.into(),
+//!     nonce: u256!(0),
+//!     gas_price: u256!(1_000_000_000),
+//!     gas_limit: u256!(21_000),
 //!     to: bobs_key.to_address(),
-//!     value: 100u32.into(),
+//!     value: u256!(100),
 //!     data: Vec::new(),
 //!     signature: None, // Not signed. Yet.
 //! };
@@ -58,18 +54,13 @@
 #![warn(clippy::all)]
 #![allow(clippy::pedantic)]
 
-extern crate num_bigint;
-extern crate num_traits;
 extern crate secp256k1;
 extern crate serde;
 extern crate serde_bytes;
 extern crate serde_rlp;
 extern crate sha3;
 #[macro_use]
-extern crate lazy_static;
-#[macro_use]
 extern crate serde_derive;
-extern crate num256;
 
 pub mod abi;
 pub mod address;
@@ -87,8 +78,9 @@ pub mod utils;
 
 pub use address::Address;
 pub use error::Error;
-pub use num256::Uint256;
 pub use private_key::PrivateKey;
 pub use signature::Signature;
 pub use transaction::Transaction;
 pub use types::BigEndianInt;
+pub use u64_array_bigints::u256;
+pub use u64_array_bigints::U256 as Uint256;

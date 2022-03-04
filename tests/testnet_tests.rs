@@ -2,7 +2,7 @@ extern crate clarity;
 extern crate rand;
 extern crate web3;
 use clarity::utils::bytes_to_hex_str;
-use clarity::{PrivateKey, Transaction};
+use clarity::{u256, PrivateKey, Transaction};
 use rand::RngCore;
 use std::env;
 use std::{thread, time};
@@ -87,11 +87,11 @@ fn testnet_alice_and_bob() {
         make_web3().expect("Unable to create a valid transport for Web3 protocol");
 
     let alice_priv_key = make_random_key();
-    println!("Alice private key: 0x{}", alice_priv_key.to_string());
+    println!("Alice private key: 0x{}", alice_priv_key);
     let bob_priv_key = make_random_key();
     assert_ne!(alice_priv_key, bob_priv_key);
 
-    println!("Bob private key: 0x{}", bob_priv_key.to_string());
+    println!("Bob private key: 0x{}", bob_priv_key);
 
     let accounts = web3
         .eth()
@@ -108,7 +108,7 @@ fn testnet_alice_and_bob() {
         from: *seed,
         to: Some(alice_priv_key.to_address().as_bytes().into()),
         gas: None,
-        gas_price: Some(0x1.into()),
+        gas_price: Some(0x1i32.into()),
         value: Some(one_eth * 10u64),
         data: None,
         nonce: None,
@@ -129,11 +129,11 @@ fn testnet_alice_and_bob() {
     // Send 5 transactions using Clarity from Alice to Bob
     for nonce in 0u64..5u64 {
         let tx = Transaction {
-            nonce: nonce.into(),
-            gas_price: 1_000_000_000u64.into(),
-            gas_limit: 21000u64.into(),
+            nonce: clarity::Uint256::from_u64(nonce),
+            gas_price: u256!(1_000_000_000),
+            gas_limit: u256!(21000),
             to: bob_priv_key.to_address(),
-            value: 1_000_000_000_000_000_000u64.into(), // 0.1ETH
+            value: u256!(1_000_000_000_000_000_000), // 0.1ETH
             data: Vec::new(),
             signature: None,
         };
