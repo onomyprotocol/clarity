@@ -115,9 +115,11 @@ impl Token {
                 wtr.extend(prefix.serialize().as_static_ref().unwrap());
                 // Pad on the right
                 wtr.extend(s.as_bytes());
-
-                let pad_right = (((s.len() - 1) / 32) + 1) * 32;
-                wtr.extend(vec![0x00u8; pad_right - s.len()]);
+                // If 's' is empty the length is zero so we don't need to add it's value
+                if !s.is_empty() {
+                    let pad_right = (((s.len() - 1) / 32) + 1) * 32;
+                    wtr.extend(vec![0x00u8; pad_right - s.len()]);
+                }
                 SerializedToken::Dynamic(wtr)
             }
             Token::FixedString(ref s) => {
@@ -685,6 +687,32 @@ mod tests {
                 .collect::<Vec<String>>(),
             vec!["00000000000000000000000000000000000000000000000000000000deadbeef".to_owned(),]
         );
+    }
+
+    #[test]
+    fn encode_string() {
+        use crate::utils::bytes_to_hex_str;
+
+        // filled
+        let result = encode_tokens(&[Token::String("data".to_string())]);
+        let encoded = "0000000000000000000000000000000000000000000000000000000000000020\
+                             0000000000000000000000000000000000000000000000000000000000000004\
+                             6461746100000000000000000000000000000000000000000000000000000000";
+
+        assert_eq!(encoded, bytes_to_hex_str(&result));
+
+        // empty string
+        let result = encode_tokens(&[Token::String("".to_string())]);
+        let encoded = "0000000000000000000000000000000000000000000000000000000000000020\
+                             0000000000000000000000000000000000000000000000000000000000000000";
+        assert_eq!(encoded, bytes_to_hex_str(&result));
+
+        // string with space
+        let result = encode_tokens(&[Token::String(" ".to_string())]);
+        let encoded = "0000000000000000000000000000000000000000000000000000000000000020\
+                             0000000000000000000000000000000000000000000000000000000000000001\
+                             2000000000000000000000000000000000000000000000000000000000000000";
+        assert_eq!(encoded, bytes_to_hex_str(&result));
     }
 
     #[test]
