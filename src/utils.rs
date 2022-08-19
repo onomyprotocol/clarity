@@ -7,6 +7,7 @@ use serde::{
     ser::Serializer,
 };
 use sha3::{Digest, Keccak256};
+use std::fmt::Write;
 use std::str;
 
 /// Takes a signature payload of arbitrary size and creates a proper payload
@@ -28,7 +29,6 @@ use std::str;
 /// let hash = get_ethereum_msg_hash("Hello, world!".as_bytes());
 /// assert_eq!(signature.recover(&hash).unwrap(), private_key.to_address());
 /// ```
-
 pub fn get_ethereum_msg_hash(data: &[u8]) -> Vec<u8> {
     let digest = Keccak256::digest(data);
     let salt_string = ETHEREUM_SALT.to_string();
@@ -66,10 +66,12 @@ pub fn debug_print_data(input: &[u8]) -> String {
     let count = input.len() / 32;
     out += "data hex dump\n";
     for i in 0..count {
-        out += &format!(
-            "0x{}\n",
+        writeln!(
+            out,
+            "0x{}",
             bytes_to_hex_str(&input[(i * 32)..((i * 32) + 32)])
         )
+        .unwrap()
     }
     out += "end hex dump\n";
     out

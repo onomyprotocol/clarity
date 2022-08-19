@@ -9,7 +9,7 @@
 //!
 //! ## Getting started
 //! Here's an example lifetime of an Alice-to-Bob Ethereum transaction made with Clarity:
-//! ```rust,no_run
+//! ```text
 //! use clarity::{Address, Signature, Transaction, PrivateKey, Uint256, u256};
 //!
 //! use futures::Future;

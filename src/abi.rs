@@ -559,9 +559,9 @@ mod tests {
 
     #[test]
     fn attempt_to_derive_invalid_function_signatures() {
-        assert!(derive_method_id("dummyUpdateValset( address[])").is_err());
-        assert!(derive_method_id("dummyUpdateValsetaddress[],uint256[])").is_err());
-        assert!(encode_call("dummyUpdateValset(address[],uint256[])", &["66u64".into()]).is_err());
+        derive_method_id("dummyUpdateValset( address[])").unwrap_err();
+        derive_method_id("dummyUpdateValsetaddress[],uint256[])").unwrap_err();
+        encode_call("dummyUpdateValset(address[],uint256[])", &["66u64".into()]).unwrap_err();
     }
 
     #[test]

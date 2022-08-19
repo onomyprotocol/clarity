@@ -16,7 +16,7 @@ edition = "2021"
 travis-ci = { repository = "althea-net/clarity", branch = "master" }
 
 [dependencies]
-secp256k1 = { version = "0.21", features = ["recovery"] }
+secp256k1 = { version = "0.24", features = ["recovery"] }
 serde = "1.0"
 serde-rlp = "0.1"
 serde_bytes = "0.11"
@@ -24,18 +24,10 @@ serde_derive = "1.0"
 sha3 = "0.10"
 u64_array_bigints = { version = "0.3", default-features = false }
 
-[[test]]
-name = "transaction_tests"
-harness = false
-
 [dev-dependencies]
 criterion = "0.3"
-futures = "0.1"
-openssl = { version = "0.10", features = ["vendored"] }
 rand = "0.8"
-rustc-test = "0.3.0"
 serde_json = "1.0"
-web3 = "0.6"
 
 [[bench]]
 name = "crypto_bench"

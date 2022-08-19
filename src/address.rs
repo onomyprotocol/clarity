@@ -390,7 +390,7 @@ fn eip_55_validate() {
             Address::parse_and_validate(starting_address).expect(&failure_message);
     }
     for starting_address in eip_55_invalid.iter() {
-        assert!(Address::parse_and_validate(starting_address).is_err())
+        Address::parse_and_validate(starting_address).unwrap_err();
     }
 }
 
