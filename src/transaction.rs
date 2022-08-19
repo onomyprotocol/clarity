@@ -263,7 +263,7 @@ impl Transaction {
             nonce: Uint256::from_bytes(data[0]).ok_or(Error::DeserializeRlp)?,
             gas_price: Uint256::from_bytes(data[1]).ok_or(Error::DeserializeRlp)?,
             gas_limit: Uint256::from_bytes(data[2]).ok_or(Error::DeserializeRlp)?,
-            to: Address::from_slice(&*data[3]).unwrap_or_default(),
+            to: Address::from_slice(data[3]).unwrap_or_default(),
             value: Uint256::from_bytes(data[4]).ok_or(Error::DeserializeRlp)?,
             data: (**data[5]).into(),
             signature: Some(Signature::new(
