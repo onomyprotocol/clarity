@@ -18,7 +18,7 @@ travis-ci = { repository = "althea-net/clarity", branch = "master" }
 [dependencies]
 secp256k1 = { version = "0.24", features = ["recovery"] }
 serde = "1.0"
-serde-rlp = "0.1"
+serde-rlp = { git = "https://github.com/onomyprotocol/serde-rlp.git", rev = "37871c8b27608319a9ed4d1872d38fe28dc1872a" }
 serde_bytes = "0.11"
 serde_derive = "1.0"
 sha3 = "0.10"
